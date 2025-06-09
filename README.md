@@ -1,3 +1,8 @@
+## Screenshots
+![image](https://github.com/user-attachments/assets/5a8b3d87-b979-498a-bd11-d1590aa52b67)
+![image](https://github.com/user-attachments/assets/6ef1e7fc-24e2-42db-ab95-b998e0f24452)
+![image](https://github.com/user-attachments/assets/2462e867-873d-4ae3-b64c-e87c4655a2bb)
+
 # Blockchain Fundamentals
 
 ## What is Blockchain?
