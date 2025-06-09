@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blockchain & Consensus Simulator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h2 { margin-top: 1.5em; }
+    button { margin: 5px 0; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+    pre { background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Blockchain & Consensus Simulator</h1>
+
+  <h2>1. Basic Blockchain Simulation</h2>
+  <button onclick="runBasicChain()">Create & Display Chain</button>
+  <button onclick="tamperChain()">Tamper Block 1 & Display</button>
+  <pre id="basicOutput"></pre>
+
+  <h2>2. Nonce Mining Simulation (Proof-of-Work)</h2>
+  <label>Difficulty (number of leading zeros): <input id="difficulty" type="number" value="4" min="1" max="6"></label>
+  <button onclick="runMining()">Mine Block</button>
+  <pre id="mineOutput"></pre>
+
+  <h2>3. Consensus Mechanisms</h2>
+  <button onclick="runConsensus()">Simulate PoW, PoS, DPoS</button>
+  <pre id="consensusOutput"></pre>
+
+  <script>
+    // Utility: compute SHA-256 hash
+    function sha256(str) {
+      return CryptoJS.SHA256(str.toString()).toString(CryptoJS.enc.Hex);
+    }
+
+    // Block class
+    class Block {
+      constructor(index, timestamp, data, previousHash = '') {
+        this.index = index;
+        this.timestamp = timestamp;
+        this.data = data;
+        this.previousHash = previousHash;
+        this.nonce = 0;
+        this.hash = this.calculateHash();
+      }
+
+      calculateHash() {
+        return sha256(this.index + this.previousHash + this.timestamp + JSON.stringify(this.data) + this.nonce);
+      }
+
+      mineBlock(difficulty) {
+        const target = Array(difficulty + 1).join('0');
+        const start = Date.now();
+        let attempts = 0;
+        while (!this.hash.startsWith(target)) {
+          this.nonce++;
+          attempts++;
+          this.hash = this.calculateHash();
+        }
+        const timeTaken = (Date.now() - start) / 1000;
+        return { attempts, timeTaken };
+      }
+    }
+
+    // 1. Basic chain creation
+    let basicChain = [];
+    function createBasicChain() {
+      basicChain = [];
+      const genesis = new Block(0, new Date().toISOString(), 'Genesis Block', '0');
+      basicChain.push(genesis);
+      for (let i = 1; i < 3; i++) {
+        const block = new Block(i, new Date().toISOString(), { transactions: [`tx ${i}`] }, basicChain[i-1].hash);
+        basicChain.push(block);
+      }
+    }
+
+    function displayChain(chain) {
+      return chain.map(b => JSON.stringify(b, null, 2)).join('\n---\n');
+    }
+
+    function runBasicChain() {
+      createBasicChain();
+      document.getElementById('basicOutput').textContent = displayChain(basicChain);
+    }
+
+    function tamperChain() {
+      if (!basicChain.length) runBasicChain();
+      basicChain[1].data = { transactions: ['tampered tx'] };
+      basicChain[1].hash = basicChain[1].calculateHash();
+      document.getElementById('basicOutput').textContent = displayChain(basicChain);
+    }
+
+    // 2. Mining
+    function runMining() {
+      const diff = parseInt(document.getElementById('difficulty').value);
+      const block = new Block(0, new Date().toISOString(), 'Mining Test', '0');
+      const result = block.mineBlock(diff);
+      document.getElementById('mineOutput').textContent =
+        `Mined hash: ${block.hash}\nNonce: ${block.nonce}\nAttempts: ${result.attempts}\nTime (s): ${result.timeTaken}`;
+    }
+
+    // 3. Consensus
+    function runConsensus() {
+      const miners = [ {id: 'A', power: Math.random()}, {id: 'B', power: Math.random()}, {id: 'C', power: Math.random()} ];
+      const powWinner = miners.reduce((p, c) => c.power > p.power ? c : p);
+
+      const stakers = [ {id: 'X', stake: Math.random()*100}, {id: 'Y', stake: Math.random()*100}, {id: 'Z', stake: Math.random()*100} ];
+      const posWinner = stakers.reduce((p, c) => c.stake > p.stake ? c : p);
+
+      const delegates = [ {id: 'D1', votes: 2}, {id: 'D2', votes: 5}, {id: 'D3', votes: 3} ];
+      const totalVotes = delegates.reduce((sum, d) => sum + d.votes, 0);
+      const rand = Math.random() * totalVotes;
+      let cum = 0;
+      let dposWinner;
+      for (let d of delegates) {
+        cum += d.votes;
+        if (rand <= cum) { dposWinner = d; break; }
+      }
+
+      const output = [];
+      output.push(`PoW Winner: ${powWinner.id} (power=${powWinner.power.toFixed(3)})`);
+      output.push(`PoS Winner: ${posWinner.id} (stake=${posWinner.stake.toFixed(2)})`);
+      output.push(`DPoS Winner: ${dposWinner.id} (votes=${dposWinner.votes})`);
+      output.push(`\n// PoW selects highest computational power, PoS selects highest stake, DPoS selects by delegated votes`);
+
+      document.getElementById('consensusOutput').textContent = output.join('\n');
+    }
+  </script>
+</body>
+</html>
